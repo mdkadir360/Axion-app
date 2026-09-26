@@ -139,3 +139,11 @@ Navigate to `http://localhost:80` and verify the KPI Strip and Asset List are po
 - [ ] Implement centralized logging.
 - [ ] Configure resource limits in Docker.
 - [ ] Set up health check probes in orchestrator.
+
+## 24. Application Login
+
+Username:
+mdkadir360@gmail.com
+
+Password:
+[configured securely in frontend]

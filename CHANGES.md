@@ -8,6 +8,26 @@ Localhost Docker Compose deployment of AXION-APP.
 
 ---
 
+## Application Login Credential Change
+
+Old username:
+info@devopsinsiders.com
+
+New username:
+mdkadir360@gmail.com
+
+Password:
+[UPDATED - NOT STORED IN DOCUMENTATION]
+
+- Source of old user: Hardcoded in `axion-ui\src\components\Login.tsx` and `axion-ui\src\components\TopBar.tsx`.
+- File/migration changed: `axion-ui\src\components\Login.tsx`, `axion-ui\src\components\TopBar.tsx`.
+- Password hashing mechanism: None (Hardcoded string comparison).
+- Preserved role: System Admin.
+- Database update performed: N/A (Frontend only).
+- Test result: PASS.
+
+---
+
 ## 1. Architecture Changes
 The application is deployed using Docker Compose on Windows.
 Browser -> localhost:8080 (UI) -> localhost:8000 (Query API) -> Docker Internal Network -> host.docker.internal:5432 (Host PostgreSQL).
@@ -122,3 +142,4 @@ Browser -> localhost:8080 (UI) -> localhost:8000 (Query API) -> Docker Internal 
 - **Files to revert**: UI API_BASE, Backend config.py, docker-compose.yml, .env.
 - **Stop Command**: `docker compose down`
 - **Revert Code**: Use git checkout if initialized, or manually restore production URLs.
+
