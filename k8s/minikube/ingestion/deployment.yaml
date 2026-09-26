@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: axion-ingestion-service
+  namespace: axion-minikube
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: axion-ingestion-service
+  template:
+    metadata:
+      labels:
+        app: axion-ingestion-service
+    spec:
+      containers:
+      - name: axion-ingestion-service
+        image: mdkadir360/axion-ingestion-service:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: axion-secrets
+              key: DATABASE_URL
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 2
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: axion-ingestion-service
+  namespace: axion-minikube
+spec:
+  selector:
+    app: axion-ingestion-service
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP

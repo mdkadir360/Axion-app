@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: axion-config
+  namespace: axion-minikube
+data:
+  # Simulator target
+  SIMULATOR_API_URL: "http://axion-ingestion-service:8000/api/v1/telemetry/ingest"
+  SIMULATOR_INTERVAL: "5"
+  # General app config
+  APP_TIMEZONE: "UTC"

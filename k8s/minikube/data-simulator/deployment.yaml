@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: axion-data-simulator
+  namespace: axion-minikube
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: axion-data-simulator
+  template:
+    metadata:
+      labels:
+        app: axion-data-simulator
+    spec:
+      containers:
+      - name: axion-data-simulator
+        image: mdkadir360/axion-data-simulator:latest
+        env:
+        - name: API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: axion-config
+              key: SIMULATOR_API_URL
+        - name: INTERVAL_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: axion-config
+              key: SIMULATOR_INTERVAL
