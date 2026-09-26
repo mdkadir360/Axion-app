@@ -15,14 +15,15 @@ spec:
     spec:
       containers:
       - name: axion-ingestion-service
-        image: mdkadir360/axion-ingestion-service:latest
+        image: axion-ingestion-service:minikube
+        imagePullPolicy: Never
         ports:
         - containerPort: 8000
         env:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: axion-secrets
+              name: axion-postgres-secret
               key: DATABASE_URL
         livenessProbe:
           httpGet:

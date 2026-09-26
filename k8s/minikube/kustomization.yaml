@@ -3,7 +3,10 @@ kind: Kustomization
 resources:
 - namespace.yaml
 - configmap.yaml
-- postgres-external.yaml
+- postgres/pvc.yaml
+- postgres/service.yaml
+- postgres/statefulset.yaml
+- postgres/migration-job.yaml
 - ingestion/deployment.yaml
 - telemetry-query/deployment.yaml
 - data-simulator/deployment.yaml

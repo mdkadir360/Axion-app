@@ -15,7 +15,8 @@ spec:
     spec:
       containers:
       - name: axion-ui
-        image: mdkadir360/axion-ui:latest
+        image: axion-ui:minikube
+        imagePullPolicy: Never
         ports:
         - containerPort: 80
         livenessProbe:

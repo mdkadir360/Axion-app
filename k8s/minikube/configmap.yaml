@@ -9,3 +9,14 @@ data:
   SIMULATOR_INTERVAL: "5"
   # General app config
   APP_TIMEZONE: "UTC"
+  # Database Init Scripts (Simplified for Job execution)
+  DB_INIT_SQL: |
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE TABLE IF NOT EXISTS telemetry (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        device_id TEXT NOT NULL,
+        value DOUBLE PRECISION NOT NULL,
+        timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_telemetry_device_id ON telemetry(device_id);
+

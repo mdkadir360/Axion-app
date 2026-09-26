@@ -15,24 +15,25 @@ spec:
     spec:
       containers:
       - name: axion-telemetry-query-service
-        image: mdkadir360/axion-telemetry-query-service:latest
+        image: axion-telemetry-query-service:minikube
+        imagePullPolicy: Never
         ports:
         - containerPort: 8000
         env:
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
-              name: axion-secrets
+              name: axion-postgres-secret
               key: DATABASE_URL
         livenessProbe:
           httpGet:
-            path: /
+            path: /devices
             port: 8000
           initialDelaySeconds: 10
           periodSeconds: 15
         readinessProbe:
           httpGet:
-            path: /
+            path: /devices
             port: 8000
           initialDelaySeconds: 5
           periodSeconds: 10

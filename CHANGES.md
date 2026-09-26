@@ -8,23 +8,52 @@ Localhost Docker Compose deployment of AXION-APP.
 
 ---
 
-## Application Login Credential Change
+## Minikube PostgreSQL Modernization
+Simplified the Minikube deployment by moving PostgreSQL inside the cluster.
 
-Old username:
-info@devopsinsiders.com
+**Changes:**
+- **Internal Database**: Replaced external Windows host PostgreSQL with a Kubernetes StatefulSet (`axion-postgres`).
+- **Persistence**: Added `PersistentVolumeClaim` (5Gi) for database durability.
+- **Secret Management**: Introduced `axion-postgres-secret` for database credentials, removing dependency on `axion-secrets`.
+- **Automation**: Updated `deploy-minikube.ps1` to handle PostgreSQL readiness and automated database migrations.
+- **Migration Job**: Added a Kubernetes Job that initializes the `axiondb` schema using a ConfigMap-based SQL script.
+- **Connectivity**: Updated all backend services (Ingestion, Query) to use `axion-postgres:5432`.
+- **Independence**: Minikube deployment is now fully decoupled from the Windows host PostgreSQL installation.
 
-New username:
-mdkadir360@gmail.com
+---
 
-Password:
-[UPDATED - NOT STORED IN DOCUMENTATION]
+## Kubernetes Migration (Testsop Environment)
+Migration from localhost Docker Compose to Azure DevOps CI/CD and Kubernetes.
 
-- Source of old user: Hardcoded in `axion-ui\src\components\Login.tsx` and `axion-ui\src\components\TopBar.tsx`.
-- File/migration changed: `axion-ui\src\components\Login.tsx`, `axion-ui\src\components\TopBar.tsx`.
-- Password hashing mechanism: None (Hardcoded string comparison).
-- Preserved role: System Admin.
-- Database update performed: N/A (Frontend only).
-- Test result: PASS.
+**Architecture Change:**
+- **Old**: Localhost ports (8080, 8000, 8001).
+- **New**: Host-based routing via K8s Ingress.
+    - Frontend: `https://axion-ui-testsop.online`
+    - Backend API: `https://axion-api-testsop.online`
+- **Routing**: Removed `/api` path-based routing in favor of a dedicated API domain for better isolation and simpler CORS management.
+
+**Key Implementations:**
+- Created `azure-pipelines.yml` for automated Build $\rightarrow$ Push $\rightarrow$ Migrate $\rightarrow$ Deploy flow.
+- Implemented a K8s Job for automated non-destructive database schema migrations.
+- Parameterized Frontend API URL using `VITE_API_BASE`.
+- Configured K8s manifests with production resource limits and health probes.
+- Set up secure secret injection via Azure DevOps Variable Groups.
+
+**Files Created:**
+- `azure-pipelines.yml`
+- `k8s/namespace.yaml`
+- `k8s/ingress.yaml`
+- `k8s/configmap/db-scripts-cm.yaml`
+- `k8s/secrets/secrets.yaml.template`
+- `k8s/ui/deployment.yaml`
+- `k8s/ui/service.yaml`
+- `k8s/ingestion/deployment.yaml`
+- `k8s/ingestion/service.yaml`
+- `k8s/telemetry-query/deployment.yaml`
+- `k8s/telemetry-query/service.yaml`
+- `k8s/data-simulator/deployment.yaml`
+- `k8s/database/migration-job.yaml`
+- `KUBERNETES_DEPLOYMENT.md`
 
 ---
 
@@ -142,4 +171,3 @@ Browser -> localhost:8080 (UI) -> localhost:8000 (Query API) -> Docker Internal 
 - **Files to revert**: UI API_BASE, Backend config.py, docker-compose.yml, .env.
 - **Stop Command**: `docker compose down`
 - **Revert Code**: Use git checkout if initialized, or manually restore production URLs.
-

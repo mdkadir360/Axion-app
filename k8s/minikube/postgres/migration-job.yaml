@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: axion-db-migration
+  namespace: axion-minikube
+spec:
+  template:
+    spec:
+      containers:
+      - name: migration
+        image: postgres:16-alpine
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: axion-postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              name: axion-postgres-secret
+              key: POSTGRES_USER
+        - name: PGDATABASE
+          valueFrom:
+            secretKeyRef:
+              name: axion-postgres-secret
+              key: POSTGRES_DB
+        volumeMounts:
+        - name: sql-scripts
+          mountPath: /scripts
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "Waiting for postgres to be ready..."
+          until pg_isready -h axion-postgres -p 5432; do
+            sleep 2
+          done
+          echo "Postgres is ready. Running authoritative migrations..."
+          psql -h axion-postgres -U $PGUSER -d $PGDATABASE -f /scripts/01-extensions.sql
+          psql -h axion-postgres -U $PGUSER -d $PGDATABASE -f /scripts/02-telemetry.sql
+          echo "Migrations complete."
+      restartPolicy: OnFailure
+      volumes:
+      - name: sql-scripts
+        configMap:
+          name: axion-db-schema
