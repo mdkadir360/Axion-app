@@ -1,0 +1,43 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: axion-db-migration
+  namespace: axion-testsop
+spec:
+  template:
+    spec:
+      containers:
+      - name: migration-tool
+        image: postgres:alpine
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: axion-db-secret
+              key: POSTGRES_PASSWORD
+        - name: PGUSER
+          valueFrom:
+            secretKeyRef:
+              name: axion-db-secret
+              key: POSTGRES_USER
+        - name: PGDATABASE
+          valueFrom:
+            secretKeyRef:
+              name: axion-db-secret
+              key: POSTGRES_DB
+        command:
+        - /bin/sh
+        - -c
+        - |
+          for file in /scripts/*.sql; do
+            echo "Executing $file..."
+            psql -h ${POSTGRES_HOST} -p ${POSTGRES_PORT} -f "$file"
+          done
+        volumeMounts:
+        - name: scripts-volume
+          mountPath: /scripts
+      volumes:
+      - name: scripts-volume
+        configMap:
+          name: axion-db-scripts
+      restartPolicy: OnFailure

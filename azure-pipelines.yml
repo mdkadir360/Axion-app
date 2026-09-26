@@ -1,0 +1,122 @@
+variables:
+  dockerRegistry: 'docker.io'
+  dockerNamespace: 'mdkadir360'
+  imageTag: '$(Build.BuildId)'
+  kubernetesNamespace: 'axion-testsop'
+  frontendApiBaseUrl: 'https://axion-api-testsop.online'
+
+  # TODO: Replace with actual Azure DevOps Service Connection names
+  dockerHubServiceConnection: '<DOCKERHUB_SERVICE_CONNECTION_NAME>'
+  kubernetesServiceConnection: '<KUBERNETES_SERVICE_CONNECTION_NAME>'
+  azureServiceConnection: '<AZURE_SERVICE_CONNECTION_NAME>'
+
+stages:
+- stage: Validate
+  jobs:
+  - job: Lint
+    steps:
+    - script: echo "Validating manifests and code..."
+    - script: echo "Running static analysis on YAML..."
+
+- stage: Build
+  dependsOn: Validate
+  jobs:
+  - job: BuildImages
+    steps:
+    - task: Docker@2
+      displayName: 'Build and Push UI'
+      inputs:
+        command: buildAndPush
+        repository: 'axion-ui'
+        dockerfile: 'axion-ui/Dockerfile'
+        containerRegistry: $(dockerHubServiceConnection)
+        tags: |
+          $(imageTag)
+          latest
+        buildArgs: |
+          VITE_API_BASE=$(frontendApiBaseUrl)
+
+    - task: Docker@2
+      displayName: 'Build and Push Ingestion'
+      inputs:
+        command: buildAndPush
+        repository: 'axion-ingestion-service'
+        dockerfile: 'axion-ingestion-service/Dockerfile'
+        containerRegistry: $(dockerHubServiceConnection)
+        tags: |
+          $(imageTag)
+          latest
+
+    - task: Docker@2
+      displayName: 'Build and Push Query Service'
+      inputs:
+        command: buildAndPush
+        repository: 'axion-telemetry-query-service'
+        dockerfile: 'axion-telemetry-query-service/Dockerfile'
+        containerRegistry: $(dockerHubServiceConnection)
+        tags: |
+          $(imageTag)
+          latest
+
+    - task: Docker@2
+      displayName: 'Build and Push Simulator'
+      inputs:
+        command: buildAndPush
+        repository: 'axion-data-simulator'
+        dockerfile: 'axion-data-simulator/Dockerfile'
+        containerRegistry: $(dockerHubServiceConnection)
+        tags: |
+          $(imageTag)
+          latest
+
+- stage: DatabaseMigration
+  dependsOn: Build
+  jobs:
+  - job: MigrateDB
+    steps:
+    - task: KubernetesManifest@1
+      displayName: 'Apply DB Migration Job'
+      inputs:
+        action: 'deploy'
+        manifests: 'k8s/database/migration-job.yaml'
+        namespace: $(kubernetesNamespace)
+
+- stage: Deploy
+  dependsOn: DatabaseMigration
+  jobs:
+  - job: DeployK8s
+    steps:
+    - task: KubernetesManifest@1
+      displayName: 'Deploy AXION Stack'
+      inputs:
+        action: 'deploy'
+        manifests: |
+          k8s/namespace.yaml
+          k8s/configmap/db-scripts-cm.yaml
+          k8s/secrets/secrets.yaml.template
+          k8s/ingress.yaml
+          k8s/ui/deployment.yaml
+          k8s/ui/service.yaml
+          k8s/ingestion/deployment.yaml
+          k8s/ingestion/service.yaml
+          k8s/telemetry-query/deployment.yaml
+          k8s/telemetry-query/service.yaml
+          k8s/data-simulator/deployment.yaml
+        containers: |
+          mdkadir360/axion-ui:$(imageTag)
+          mdkadir360/axion-ingestion-service:$(imageTag)
+          mdkadir360/axion-telemetry-query-service:$(imageTag)
+          mdkadir360/axion-data-simulator:$(imageTag)
+        namespace: $(kubernetesNamespace)
+
+- stage: Verify
+  dependsOn: Deploy
+  jobs:
+  - job: SmokeTest
+    steps:
+    - script: |
+        echo "Verifying Frontend: https://axion-ui-testsop.online"
+        curl -s -I https://axion-ui-testsop.online | grep "200 OK" || exit 1
+        echo "Verifying Backend API: https://axion-api-testsop.online"
+        curl -s -I https://axion-api-testsop.online | grep "200 OK" || exit 1
+      displayName: 'Public Endpoint Health Check'

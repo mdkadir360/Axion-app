@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: axion-db-scripts
+  namespace: axion-testsop
+data:
+  01-extensions.sql: |
+    -- Placeholder for 01-extensions.sql content
+    -- In the pipeline, this will be populated from the axion-database-schema repo
+  02-telemetry.sql: |
+    -- Placeholder for 02-telemetry.sql content
+  03-alerts.sql: |
+    -- Placeholder for 03-alerts.sql content
